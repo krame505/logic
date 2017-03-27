@@ -1,3 +1,3 @@
 #!/bin/bash
 
-silver -I .. -o circuit.jar $@ logic
+silver -I .. -o logic.jar $@ logic
