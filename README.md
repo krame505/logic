@@ -1,2 +1,2 @@
-# logic_circuits
+# logic
 Attribute grammar for manipulating logical circuits
