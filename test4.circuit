@@ -1,0 +1,29 @@
+circuit (in, out) {
+  parallel {
+    series {
+      x5;
+      parallel {
+        series {
+          x4;
+          parallel {
+            x6;
+            series {
+              x2;
+              x3;
+            }
+          }
+        }
+        series {
+          x1;
+          x2;
+          x6;
+        }
+      }
+    }
+    series {
+      x1;
+      x2;
+      x3;
+    }
+  }
+}

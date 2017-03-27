@@ -1,0 +1,4 @@
+circuit (a, b) { x; }
+circuit (b, c) { y; }
+circuit (c, d) { z; }
+circuit (d, a) { w; }

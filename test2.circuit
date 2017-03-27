@@ -1,0 +1,13 @@
+circuit (a, b) {
+  parallel {
+    w;
+    x;
+  }
+}
+
+circuit (b, c) {
+  parallel {
+    y;
+    z;
+  }
+}
