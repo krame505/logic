@@ -35,6 +35,28 @@ top::MultiCircuit ::= lTerm::String rTerm::String body::Circuit t::MultiCircuit
         t.toGraph));
 }
 
+abstract production consMultiCircuitDirect
+top::MultiCircuit ::= lTerm::String rTerm::String t::MultiCircuit
+{
+  top.dotPP =
+    s"  ${lTerm} -- ${rTerm};\n" ++
+    t.dotPP;
+
+  top.terminals =
+    (if !containsBy(stringEq, lTerm, t.terminals)
+     then [lTerm]
+     else []) ++
+    (if !containsBy(stringEq, rTerm, t.terminals)
+     then [rTerm]
+     else []) ++ t.terminals;
+  top.toGraph =
+    addConnection(
+      lTerm, rTerm, trueExpr(),
+      addConnection(
+        rTerm, lTerm, trueExpr(),
+        t.toGraph));
+}
+
 abstract production nilMultiCircuit
 top::MultiCircuit ::= 
 {

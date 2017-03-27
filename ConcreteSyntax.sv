@@ -3,6 +3,7 @@ grammar logic;
 lexer class Keyword;
 
 terminal Circuit_t  'circuit'  lexer classes {Keyword};
+terminal Direct_t   'direct'   lexer classes {Keyword};
 terminal Series_t   'series'   lexer classes {Keyword};
 terminal Parallel_t 'parallel' lexer classes {Keyword};
 terminal True_t     'true'     lexer classes {Keyword};
@@ -32,6 +33,8 @@ closed nonterminal MultiCircuit_c with ast<MultiCircuit>;
 concrete productions top::MultiCircuit_c
 | 'circuit' '(' term1::Identifier_t ',' term2::Identifier_t ')' '{' cs::Circuits_c '}' rest::MultiCircuit_c 
   { top.ast = consMultiCircuit(term1.lexeme, term2.lexeme, series(cs.ast), rest.ast); }
+| 'direct' '(' term1::Identifier_t ',' term2::Identifier_t ')' ';' rest::MultiCircuit_c
+  { top.ast = consMultiCircuitDirect(term1.lexeme, term2.lexeme, rest.ast); }
 | 
   { top.ast = nilMultiCircuit(); }
 
