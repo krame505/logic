@@ -10,8 +10,9 @@ synthesized attribute substituted::Expr;
 
 synthesized attribute reduced::Expr;
 synthesized attribute dnf::[[Expr]];
+synthesized attribute cnf::[[Expr]];
 
-nonterminal Expr with pp, vars, isEqualTo, isEqual, substitutions, substituted, reduced, dnf;
+nonterminal Expr with pp, vars, isEqualTo, isEqual, substitutions, substituted, reduced, dnf, cnf;
 
 abstract production trueExpr
 top::Expr ::=
@@ -25,6 +26,7 @@ top::Expr ::=
     | _ -> false
     end;
   top.dnf = [[]];
+  top.cnf = [];
 }
 
 abstract production falseExpr
@@ -39,6 +41,7 @@ top::Expr ::=
     | _ -> false
     end;
   top.dnf = [];
+  top.cnf = [[]];
 }
 
 abstract production varExpr
@@ -58,6 +61,7 @@ top::Expr ::= n::String
     | _ -> false
     end;
   top.dnf = [[varExpr(n)]];
+  top.cnf = [[varExpr(n)]];
 }
 
 abstract production andExpr
@@ -102,6 +106,7 @@ top::Expr ::= e1::Expr e2::Expr
       c2::[Expr] <- e2.dnf;
       return c1 ++ c2;
     };
+  top.cnf = e1.cnf ++ e2.cnf;
 }
 
 abstract production orExpr
@@ -141,6 +146,12 @@ top::Expr ::= e1::Expr e2::Expr
     | e1, e2 -> orExpr(e1, e2)
     end;
   top.dnf = e1.dnf ++ e2.dnf;
+  top.cnf =
+    do (bindList, returnList) {
+      c1::[Expr] <- e1.cnf;
+      c2::[Expr] <- e2.cnf;
+      return c1 ++ c2;
+    };
 }
 
 abstract production notExpr
@@ -178,6 +189,11 @@ top::Expr ::= e::Expr
       c::[Expr] <- e.dnf;
       return map(notExpr, c);
     };
+  top.cnf =
+    do (bindList, returnList) {
+      c::[Expr] <- e.cnf;
+      return map(notExpr, c);
+    };
 }
 
 function simplify
@@ -185,9 +201,14 @@ Expr ::= e::Expr
 {
   local orClauses::[Expr] =
     do (bindList, returnList) {
-      c::[Expr] <- e.dnf;
-      return foldr(andExpr, trueExpr(), nubBy(exprEqual, c));
+      c::[Either<String String>] <- toDNFClauses(e);
+      return
+        foldr(
+          andExpr,
+          trueExpr(),
+          nubBy(exprEqual, map(literalToExpr, sortBy(literalLte, c))));
     };
+
   return
     foldr(
       orExpr,
@@ -212,6 +233,82 @@ Boolean ::= e1::Expr e2::Expr
 {
   e1.isEqualTo = e2;
   return e1.isEqual;
+}
+
+-- Literal in clause represented as left(name) = varExpr(name), right(name) = notExpr(varExpr(name))
+function toDNFClauses
+[[Either<String String>]] ::= e::Expr
+{
+  return
+    do (bindList, returnList) {
+      elem::Pair<[Pair<String Expr>] [Either<String String>]> <-
+        zipWith(pair, allAssignments(e.vars), allTerms(e.vars));
+      case substitute(elem.fst, e).reduced of
+        trueExpr() -> [elem.snd]
+      | falseExpr() -> []
+      end;
+    };
+}
+
+function allAssignments
+[[Pair<String Expr>]] ::= vars::[String]
+{
+  return
+    case vars of
+      h :: t -> 
+      do (bindList, returnList) {
+        assign::[Pair<String Expr>] <- allAssignments(t);
+        [pair(h, trueExpr()) :: assign, pair(h, falseExpr()) :: assign];
+      }
+    | [] -> [[]]
+    end;
+}
+
+function allTerms
+[[Either<String String>]] ::= vars::[String]
+{
+  return
+    case vars of
+      h :: t -> 
+      do (bindList, returnList) {
+        rest::[Either<String String>] <- allTerms(t);
+        [left(h) :: rest, right(h) :: rest];
+      }
+    | [] -> [[]]
+    end;
+}
+
+function literalToExpr
+Expr ::= l::Either<String String>
+{
+  return
+    case l of
+      left(n) -> varExpr(n)
+    | right(n) -> notExpr(varExpr(n))
+    end;
+}
+
+function literalEqual
+Boolean ::= l1::Either<String String> l2::Either<String String>
+{
+  return
+    case l1, l2 of
+      left(n1), left(n2) -> n1 == n2
+    | right(n1), right(n2) -> n1 == n2
+    | _, _ -> false
+    end;
+}
+
+function literalLte
+Boolean ::= l1::Either<String String> l2::Either<String String>
+{
+  return
+    case l1, l2 of
+      left(n1), left(n2) -> stringLte(n1, n2)
+    | right(n1), right(n2) -> stringLte(n1, n2)
+    | left(_), right(_) -> true
+    | right(_), left(_) -> false
+    end;
 }
 
 -- True if e1 is implied by e2
