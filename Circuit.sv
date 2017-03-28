@@ -122,9 +122,9 @@ top::Circuits ::= h::Circuit t::Circuits
   top.parallelDotPP =
     h.dotPP ++ t.parallelDotPP ++
 s"""  { rank=same; ${h.dotLName} ${t.dotLName} }
-  { rank=same; ${h.dotRName} ${t.dotRName} }
   ${top.parallelDotLNameIn} -- ${h.dotLName};
-  ${h.dotRName} -- ${top.parallelDotRNameIn};""";
+  ${h.dotRName} -- ${top.parallelDotRNameIn};
+""";
   top.dotLName = h.dotLName;
   top.dotRName = t.dotRName;
   top.toAndExpr = andExpr(h.toExpr, t.toAndExpr);
@@ -137,7 +137,7 @@ top::Circuits ::= h::Circuit
   top.seriesDotPP = h.dotPP;
   top.parallelDotPP =
     h.dotPP ++
-    s"  ${top.parallelDotLNameIn} -- ${h.dotLName};\n  ${h.dotRName} -- ${top.parallelDotRNameIn};";
+    s"  ${top.parallelDotLNameIn} -- ${h.dotLName};\n  ${h.dotRName} -- ${top.parallelDotRNameIn};\n";
   top.dotLName = h.dotLName;
   top.dotRName = h.dotRName;
   top.toAndExpr = h.toExpr;
